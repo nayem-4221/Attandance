@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [employees, setEmployees] = useState<Employee[]>([])
+  const [attendanceData, setAttendanceData] = useState<any[]>([])
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -42,12 +43,23 @@ export default function AdminDashboard() {
     }
     setUser(currentUser)
 
-    const employeesList = JSON.parse(localStorage.getItem('employees') || '[]')
-    setEmployees(employeesList)
-    if (employeesList.length > 0) {
-      setSelectedEmployee(employeesList[0])
-    }
-    setLoading(false)
+    // Fetch users and attendance from API
+    fetch('https://script.google.com/macros/s/AKfycbxQ5M4d_n3g37osQj8LDrnCkwQ_ZiGylgCqEfI61nnAu47uONTC7o_1UXLIPcimvLgF/exec')
+      .then(res => res.json())
+      .then(data => {
+        // Expecting data.users and data.attendance
+        if (data.users && Array.isArray(data.users)) {
+          setEmployees(data.users)
+          if (data.users.length > 0) {
+            setSelectedEmployee(data.users[0])
+          }
+        }
+        if (data.attendance && Array.isArray(data.attendance)) {
+          setAttendanceData(data.attendance)
+        }
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
   }, [router])
 
   const handleLogout = () => {
@@ -70,6 +82,32 @@ export default function AdminDashboard() {
 
   if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>
 
+  // Helper to calculate duty duration
+  function getDutyDuration(inTime, outTime) {
+    if (!inTime || !outTime) return '-';
+    try {
+      const inDate = new Date(`1970-01-01T${inTime}`);
+      const outDate = new Date(`1970-01-01T${outTime}`);
+      let diffMs = outDate - inDate;
+      if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; // handle overnight
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const mins = Math.floor((diffMs / (1000 * 60)) % 60);
+      return `${hours}h ${mins}m`;
+    } catch {
+      return '-';
+    }
+  }
+
+  // Merge attendance with user info
+  const allAttendance = attendanceData.map((rec) => {
+    const emp = employees.find(e => e.id === rec.employeeId);
+    return {
+      employeeName: emp ? emp.name : rec.employeeId,
+      employeeEmail: emp ? emp.email : '',
+      ...rec
+    };
+  }).sort((a, b) => b.date.localeCompare(a.date));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -82,6 +120,43 @@ export default function AdminDashboard() {
             Logout
           </Button>
         </div>
+
+        {/* New: All Attendance Table */}
+        <Card className="mb-8 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-lg">All Users Attendance</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            {allAttendance.length === 0 ? (
+              <p className="text-gray-500 text-sm">No attendance records found</p>
+            ) : (
+              <table className="min-w-full text-sm border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">Name</th>
+                    <th className="p-2 border">Email</th>
+                    <th className="p-2 border">Date</th>
+                    <th className="p-2 border">Check In</th>
+                    <th className="p-2 border">Check Out</th>
+                    <th className="p-2 border">Duty Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allAttendance.map((rec, idx) => (
+                    <tr key={idx} className="border-b">
+                      <td className="p-2 border">{rec.employeeName}</td>
+                      <td className="p-2 border">{rec.employeeEmail}</td>
+                      <td className="p-2 border">{rec.date}</td>
+                      <td className="p-2 border">{rec.checkIn || '-'}</td>
+                      <td className="p-2 border">{rec.checkOut || '-'}</td>
+                      <td className="p-2 border">{getDutyDuration(rec.checkIn, rec.checkOut)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <Card className="shadow-lg">
