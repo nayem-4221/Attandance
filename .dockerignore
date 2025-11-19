@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log*
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.vercel
+**/.DS_Store
+# Ignore build caches and local artifacts
+coverage
+.tmp
+.cache

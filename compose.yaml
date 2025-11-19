@@ -1,0 +1,16 @@
+services:
+  attendance:
+    build: .
+    container_name: attendance-tracker
+    ports:
+      - "42212:42212"
+    environment:
+      # Change these as needed
+      - PORT=42212
+      - JWT_SECRET=change_me_in_env
+      - API_URL=https://script.google.com/macros/s/AKfycbxQ5M4d_n3g37osQj8LDrnCkwQ_ZiGylgCqEfI61nnAu47uONTC7o_1UXLIPcimvLgF/exec
+    volumes:
+      # Persist data and uploads on the host
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    restart: unless-stopped
