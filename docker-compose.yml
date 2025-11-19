@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "4221:4221"
+    environment:
+      - NODE_ENV=production
+      - PORT=4221
+    restart: unless-stopped
