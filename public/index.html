@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance Tracker</title>
+  <style>
+    :root{--bg1:#eef4ff;--bg2:#f6f9ff;--card:#fff;--border:#e2e8f0;--muted:#64748b;--text:#0f172a;--primary:#0f172a;--accent:#111827;}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:radial-gradient(1200px 600px at 50% -10%,var(--bg1),var(--bg2));color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}
+    body.logged-in{align-items:flex-start;justify-content:flex-start;padding:0}
+    .full{width:100%;max-width:none;margin:0}
+    .wrap{width:100%;max-width:420px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 22px 24px;box-shadow:0 10px 25px rgba(0,0,0,.08)}
+    .hidden{display:none}
+    .title{text-align:center;margin:6px 0 2px;font-size:28px;font-weight:800}
+    .subtitle{text-align:center;margin:0 0 18px;color:var(--muted);font-size:13px}
+    label{display:block;font-size:13px;color:var(--text);margin:10px 2px 6px;font-weight:600}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px}
+    .btn{width:100%;padding:12px 14px;margin-top:14px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer}
+    .btn:hover{background:var(--accent)}
+    .row{display:flex;gap:8px;align-items:center}
+    .toolbar{display:flex;gap:8px;align-items:center;margin:8px 0}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid var(--border);padding:10px;font-size:13px;text-align:left}
+    th{background:#f8fafc}
+    /* Plain table style for Admin Users list (no borders/box) */
+    .table-plain, .table-plain th, .table-plain td { border:none; }
+    .table-plain th { background:transparent; }
+    .msg{margin-top:8px;color:#ef4444;text-align:center;min-height:18px}
+  </style>
+</head>
+<body>
+  <div id="loginWrap" class="wrap">
+    <div id="loginCard" class="card">
+      <div class="title">Attendance Tracker</div>
+      <div class="subtitle">Team attendance management system</div>
+      <label>Username</label>
+      <input id="username" placeholder="Enter your username" value="Nayem" />
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Enter your password" value="Nayem_10MS" />
+      <button id="loginBtn" class="btn">Login</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="usersCard" class="card full hidden" style="margin:8px;">
+    <div class="toolbar" style="justify-content:space-between;">
+      <h3 style="margin:6px 0;">Admin Panel</h3>
+      <button id="logoutBtn" class="btn" style="width:auto;padding:8px 12px;margin:0">Logout</button>
+    </div>
+    <div class="card" style="border:1px solid var(--border);box-shadow:none;">
+      <div class="toolbar" style="flex-wrap:wrap;gap:10px;">
+        <strong>Attendance (Admin)</strong>
+        <label>From</label><input id="aFrom" type="date"><label>To</label><input id="aTo" type="date">
+        <label>User</label><select id="aUser" style="padding:8px;border:1px solid var(--border);border-radius:8px"><option value="">All</option></select>
+        <button id="aLoad" class="btn" style="width:auto;padding:8px 12px">Load</button>
+        <button id="aExport" class="btn" style="width:auto;padding:8px 12px;background:#0ea5e9">Export CSV</button>
+        <button id="aDeleteSel" class="btn" style="width:auto;padding:8px 12px;background:#ef4444">Delete Selected</button>
+      </div>
+      <table><thead><tr><th><input type="checkbox" id="aSelectAll"></th><th>User</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Duration</th><th>Photo In</th><th>Photo Out</th><th>In Location</th><th>Out Location</th><th>Actions</th></tr></thead><tbody id="aBody"></tbody></table>
+    </div>
+  </div>
+
+  <div id="userHomeCard" class="card full hidden" style="margin:8px;">
+    <div class="toolbar" style="justify-content:space-between;">
+      <h3>Welcome</h3>
+      <button id="logoutBtn2" class="btn" style="width:auto;padding:8px 12px;margin:0">Logout</button>
+    </div>
+    <p id="whoami" style="margin:0 0 12px;color:#334155"></p>
+    <div class="card" style="border:1px solid var(--border);box-shadow:none;">
+      <div style="font-weight:700;margin-bottom:8px">Today's Attendance</div>
+      <div class="row" style="gap:12px;align-items:stretch">
+        <div style="flex:1;background:#eef2ff;border:1px solid var(--border);border-radius:10px;padding:12px"><div style="color:#64748b;font-size:12px;margin-bottom:6px">Check In Time</div><div id="checkInTime" style="font-weight:800;color:#2563eb;font-size:20px">Not checked in</div></div>
+        <div style="flex:1;background:#f5e9ff;border:1px solid var(--border);border-radius:10px;padding:12px"><div style="color:#64748b;font-size:12px;margin-bottom:6px">Check Out Time</div><div id="checkOutTime" style="font-weight:800;color:#8b5cf6;font-size:20px">Not checked out</div></div>
+      </div>
+      <div class="row" style="gap:10px;margin-top:12px">
+        <button id="checkInBtn" class="btn" style="background:#16a34a">Check In</button>
+        <button id="checkOutBtn" class="btn" style="background:#ef4444;display:none">Check Out</button>
+        <button id="cameraToggle" class="btn" style="width:auto;padding:8px 12px;background:#334155">Open Camera</button>
+        <button id="captureBtn" class="btn" style="width:auto;padding:8px 12px;background:#0ea5e9;display:none">Capture</button>
+      </div>
+      <div id="cameraWrap" class="row" style="gap:12px;margin-top:10px;align-items:flex-start;display:none">
+        <video id="video" autoplay playsinline style="width:280px;height:210px;background:#000;border-radius:8px"></video>
+        <canvas id="canvas" width="280" height="210" style="display:none"></canvas>
+        <img id="previewImg" style="width:280px;height:210px;border-radius:8px;object-fit:cover;display:none" />
+      </div>
+    </div>
+    <div class="card" style="border:1px solid var(--border);box-shadow:none;margin-top:14px">
+      <div style="font-weight:700;margin-bottom:8px">Attendance History</div>
+      <div id="historyEmpty" style="color:#64748b;text-align:center;padding:10px">No attendance records yet</div>
+      <table id="historyTable" style="display:none"><thead><tr><th>Date</th><th>Check In</th><th>Check Out</th></tr></thead><tbody id="historyBody"></tbody></table>
+    </div>
+  </div>
+
+  <script>
+    const loginCard = document.getElementById('loginCard');
+    const loginWrap = document.getElementById('loginWrap');
+    const usersCard = document.getElementById('usersCard');
+    const userHomeCard = document.getElementById('userHomeCard');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const logoutBtn2 = document.getElementById('logoutBtn2');
+    const loginMsg = document.getElementById('loginMsg');
+    const usernameEl = document.getElementById('username');
+    const passwordEl = document.getElementById('password');
+    // Users list UI removed; keep only dropdown for filtering attendance
+    const whoami = document.getElementById('whoami');
+    const checkInTimeEl = document.getElementById('checkInTime');
+    const checkOutTimeEl = document.getElementById('checkOutTime');
+    const checkInBtn = document.getElementById('checkInBtn');
+    const checkOutBtn = document.getElementById('checkOutBtn');
+    const cameraToggle = document.getElementById('cameraToggle');
+    const captureBtn = document.getElementById('captureBtn');
+    const cameraWrap = document.getElementById('cameraWrap');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const previewImg = document.getElementById('previewImg');
+    const historyTable = document.getElementById('historyTable');
+    const historyEmpty = document.getElementById('historyEmpty');
+    const historyBody = document.getElementById('historyBody');
+    const aFrom = document.getElementById('aFrom');
+    const aTo = document.getElementById('aTo');
+    const aUser = document.getElementById('aUser');
+    const aLoad = document.getElementById('aLoad');
+    const aExport = document.getElementById('aExport');
+    const aDeleteSel = document.getElementById('aDeleteSel');
+    const aSelectAll = document.getElementById('aSelectAll');
+    const aBody = document.getElementById('aBody');
+
+    const API = '';
+
+    function setToken(t){localStorage.setItem('token',t)}
+    function getToken(){return localStorage.getItem('token')}
+    function clearToken(){localStorage.removeItem('token')}
+    let stream=null,lastPhoto=null,lastLocation=null;
+
+    function toLocal(dt){return dt?new Date(dt).toLocaleString():null}
+    function imgTd(url){return url?`<a href="${url}" target="_blank"><img src="${url}" style="height:40px;border-radius:6px"></a>`:'-'}
+    function locText(loc){if(!loc||loc.lat==null||loc.lng==null) return '-'; const lat=Number(loc.lat).toFixed(5), lng=Number(loc.lng).toFixed(5); return `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank">${lat}, ${lng}</a>`}
+
+    async function getLocation(){return new Promise(r=>{if(!navigator.geolocation){r(null);return;} navigator.geolocation.getCurrentPosition(p=>{lastLocation={lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy,timestamp:p.timestamp};r(lastLocation);},_=>r(null),{enableHighAccuracy:true,timeout:8000,maximumAge:0});})}
+
+    async function login(){loginMsg.textContent=''; try{const r=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:usernameEl.value,password:passwordEl.value})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'Login failed'); setToken(d.token); loginCard.classList.add('hidden'); if (loginWrap) loginWrap.style.display='none'; document.body.classList.add('logged-in'); const role=(d.role||'').toLowerCase(); if(role==='admin'){ usersCard.classList.remove('hidden'); userHomeCard.classList.add('hidden'); await fetchUsers(); setDefaultDates(); await loadAdminAttendance(); } else { usersCard.classList.add('hidden'); userHomeCard.classList.remove('hidden'); whoami.textContent=`Logged in as: ${d.user?.username||''} (Role: ${d.role})`; getLocation(); loadToday(); loadHistory(); } } catch(e){ loginMsg.textContent=e.message; }}
+
+    async function fetchUsers(){const token=getToken(); if(!token) return; const r=await fetch(API+'/admin/users',{headers:{Authorization:'Bearer '+token}}); if(r.status===401||r.status===403){clearToken(); usersCard.classList.add('hidden'); loginCard.classList.remove('hidden'); if (loginWrap) loginWrap.style.display=''; return;} const d=await r.json(); aUser.innerHTML='<option value="">All</option>'; (d.items||[]).forEach(u=>{const opt=document.createElement('option'); opt.value=u.username; opt.textContent=u.username; aUser.appendChild(opt);}); }
+
+    function setDefaultDates(){const t=new Date(); const yyyy=t.getFullYear(), mm=String(t.getMonth()+1).padStart(2,'0'), dd=String(t.getDate()).padStart(2,'0'); const ago=new Date(t.getTime()-6*24*3600*1000); const y2=ago.getFullYear(), m2=String(ago.getMonth()+1).padStart(2,'0'), d2=String(ago.getDate()).padStart(2,'0'); aTo.value=`${yyyy}-${mm}-${dd}`; aFrom.value=`${y2}-${m2}-${d2}`; }
+
+    async function loadAdminAttendance(){const p=new URLSearchParams(); if(aFrom.value) p.set('dateFrom',aFrom.value); if(aTo.value) p.set('dateTo',aTo.value); if(aUser.value) p.set('username',aUser.value); const r=await fetch(API+'/admin/attendance?'+p.toString(),{headers:{Authorization:'Bearer '+getToken()}}); if(!r.ok) return; const d=await r.json(); aBody.innerHTML=''; (d.items||[]).forEach(row=>{const ci=row.checkInAt?new Date(row.checkInAt).toLocaleString():'-'; const co=row.checkOutAt?new Date(row.checkOutAt).toLocaleString():'-'; const tr=document.createElement('tr'); tr.innerHTML=`<td><input type="checkbox" class="aRowSel" data-u="${row.username}" data-d="${row.date}"></td><td>${row.username}</td><td>${row.date}</td><td>${ci}</td><td>${co}</td><td>${row.durationHuman}</td><td>${imgTd(row.checkInPhoto)}</td><td>${imgTd(row.checkOutPhoto)}</td><td>${locText(row.checkInLoc)}</td><td>${locText(row.checkOutLoc)}</td><td><button class="btn btn-del" data-u="${row.username}" data-d="${row.date}" style="width:auto;padding:6px 10px;background:#ef4444">Delete</button></td>`; aBody.appendChild(tr);}); }
+
+    function buildFilterQuery(){ const p=new URLSearchParams(); if(aFrom.value) p.set('dateFrom',aFrom.value); if(aTo.value) p.set('dateTo',aTo.value); if(aUser.value) p.set('username',aUser.value); return p; }
+
+    function exportCsv(){ const p = buildFilterQuery(); const url = API + '/admin/attendance/export?' + p.toString(); window.open(url, '_blank'); }
+
+    async function bulkDeleteSelected(){ const boxes = Array.from(document.querySelectorAll('.aRowSel:checked')); if (!boxes.length) { alert('Select rows first'); return; } if (!confirm('Delete selected records?')) return; const items = boxes.map(b=>({ username:b.dataset.u, date:b.dataset.d })); const r = await fetch(API + '/admin/attendance/bulk-delete', { method:'POST', headers: { 'Content-Type':'application/json', Authorization: 'Bearer '+getToken() }, body: JSON.stringify({ items }) }); if (!r.ok) { const d=await r.json().catch(()=>({})); alert(d.error || 'Bulk delete failed'); return; } await loadAdminAttendance(); aSelectAll.checked=false; }
+
+    async function deleteAdminRecord(username, date){
+      if (!confirm(`Delete ${username} on ${date}?`)) return;
+      const p = new URLSearchParams({ username, date });
+      const r = await fetch(API+'/admin/attendance?'+p.toString(), { method:'DELETE', headers: { Authorization: 'Bearer '+getToken() }});
+      if (r.ok) { await loadAdminAttendance(); } else { const d=await r.json().catch(()=>({})); alert(d.error || 'Delete failed'); }
+    }
+
+    async function loadToday(){const r=await fetch(API+'/attendance/today',{headers:{Authorization:'Bearer '+getToken()}}); if(!r.ok) return; const d=await r.json(); checkInTimeEl.textContent=toLocal(d.checkInAt)||'Not checked in'; checkOutTimeEl.textContent=toLocal(d.checkOutAt)||'Not checked out'; const checkedIn=!!d.checkInAt, checkedOut=!!d.checkOutAt; checkInBtn.style.display=checkedIn?'none':'inline-block'; checkOutBtn.style.display=checkedIn&&!checkedOut?'inline-block':'none'; }
+    async function loadHistory(){const r=await fetch(API+'/attendance/history',{headers:{Authorization:'Bearer '+getToken()}}); if(!r.ok) return; const d=await r.json(); historyBody.innerHTML=''; if(!d.items||!d.items.length){historyTable.style.display='none'; historyEmpty.style.display='block'; return;} historyTable.style.display='table'; historyEmpty.style.display='none'; d.items.forEach(it=>{const tr=document.createElement('tr'); tr.innerHTML=`<td>${it.date}</td><td>${toLocal(it.checkInAt)||'-'}</td><td>${toLocal(it.checkOutAt)||'-'}</td>`; historyBody.appendChild(tr);}); }
+
+    async function toggleCamera(){if(stream){stream.getTracks().forEach(t=>t.stop()); stream=null; cameraWrap.style.display='none'; captureBtn.style.display='none'; previewImg.style.display='none'; return;} try{stream=await navigator.mediaDevices.getUserMedia({video:true}); video.srcObject=stream; cameraWrap.style.display='flex'; captureBtn.style.display='inline-block';}catch{alert('Camera not available');}}
+    function capturePhoto(){if(!stream){alert('Open camera first'); return;} const ctx=canvas.getContext('2d'); canvas.width=video.videoWidth||280; canvas.height=video.videoHeight||210; ctx.drawImage(video,0,0,canvas.width,canvas.height); lastPhoto=canvas.toDataURL('image/jpeg',0.9); previewImg.src=lastPhoto; previewImg.style.display='block'; }
+
+    async function doCheckIn(){await getLocation(); const r=await fetch(API+'/attendance/check-in',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+getToken()},body:JSON.stringify({photoDataUrl:lastPhoto,location:lastLocation})}); const d=await r.json(); if(!r.ok){alert(d.error||'Check-in failed');return;} lastPhoto=null; previewImg.style.display='none'; await loadToday(); await loadHistory(); }
+    async function doCheckOut(){await getLocation(); const r=await fetch(API+'/attendance/check-out',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+getToken()},body:JSON.stringify({photoDataUrl:lastPhoto,location:lastLocation})}); const d=await r.json(); if(!r.ok){alert(d.error||'Check-out failed');return;} lastPhoto=null; previewImg.style.display='none'; await loadToday(); await loadHistory(); }
+
+    function doLogout(){clearToken(); usersCard.classList.add('hidden'); userHomeCard.classList.add('hidden'); loginCard.classList.remove('hidden'); if (loginWrap) loginWrap.style.display=''; document.body.classList.remove('logged-in'); loginMsg.textContent=''; }
+
+    loginBtn.addEventListener('click', login); logoutBtn.addEventListener('click', doLogout); logoutBtn2.addEventListener('click', doLogout); aLoad.addEventListener('click', loadAdminAttendance); aExport.addEventListener('click', exportCsv); aDeleteSel.addEventListener('click', bulkDeleteSelected); checkInBtn.addEventListener('click', doCheckIn); checkOutBtn.addEventListener('click', doCheckOut); cameraToggle.addEventListener('click', toggleCamera); captureBtn.addEventListener('click', capturePhoto);
+    aSelectAll.addEventListener('change', ()=>{ document.querySelectorAll('.aRowSel').forEach(cb=>{ cb.checked = aSelectAll.checked; }); });
+    aBody.addEventListener('click', (e)=>{const b=e.target.closest('.btn-del'); if(!b) return; deleteAdminRecord(b.dataset.u, b.dataset.d);});
+
+    (async function init(){const t=getToken(); if(!t) return; const r=await fetch(API+'/auth/me',{headers:{Authorization:'Bearer '+t}}); if(!r.ok) return; const d=await r.json(); loginCard.classList.add('hidden'); if (loginWrap) loginWrap.style.display='none'; document.body.classList.add('logged-in'); if((d.user?.role||'').toLowerCase()==='admin'){ usersCard.classList.remove('hidden'); userHomeCard.classList.add('hidden'); await fetchUsers(); setDefaultDates(); await loadAdminAttendance(); } else { usersCard.classList.add('hidden'); userHomeCard.classList.remove('hidden'); whoami.textContent=`Logged in as: ${d.user?.username||''} (Role: ${d.user?.role})`; loadToday(); loadHistory(); } })();
+  </script>
+</body>
+</html>
